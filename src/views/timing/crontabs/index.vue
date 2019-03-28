@@ -185,10 +185,11 @@
         // });
       },
       submitRoom(val,type){
+        console.log(this.form);
         let validateResult = this.getFormData(val);
         if(validateResult.valid){
           // 向表中新增数据
-          let method = 'post'
+          let method = 'post';
           if(type == 'updateData'){
             method = 'put'
           }

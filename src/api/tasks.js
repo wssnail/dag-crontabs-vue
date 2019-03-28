@@ -1,8 +1,16 @@
 import request from "@/utils/request"
 
-export function getTasks() {
+export function Tasks(method,data = null) {
   return request({
-    method: "get",
-    url:"crontabs/"
+    method: method,
+    url:"tasks/",
+    data:data
   })
 }
+
+// export function postTasks() {
+//   return request({
+//     method: "post",
+//     url:"crontabs/"
+//   })
+// }

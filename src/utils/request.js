@@ -62,7 +62,19 @@ service.interceptors.response.use(
             location.reload() // 为了重新实例化vue-router对象 避免bug
           })
         })
-      }
+      };
+
+      if (res.code === 50000) {
+        var msg = res.data.msg;
+        Message({
+          // message: error.message,
+          message: msg,
+          type: 'error',
+          duration: 5 * 1000
+        });
+        return Promise.reject()
+      };
+
       return Promise.reject('error')
     } else {
       return response.data
@@ -75,9 +87,9 @@ service.interceptors.response.use(
       message: "账号或密码错误，请重新输入！",
       type: 'error',
       duration: 5 * 1000
-    })
+    });
     return Promise.reject(error)
   }
-)
+);
 
 export default service

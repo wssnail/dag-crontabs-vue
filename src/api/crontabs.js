@@ -2,9 +2,24 @@ import request from '@/utils/request'
 
 export function Crontabs(method,data = null) {
 
-  return request({
-    url: '/crontabs/',
-    method: method,
-    data:data
-  })
+  switch(method)
+  {
+    case 'get':
+      return request({
+        url: '/crontabs/',
+        method: 'get',
+        params:data
+      });
+      break;
+    case 'post':
+      return request({
+        url: '/crontabs/',
+        method: 'post',
+        data:data
+      });
+      break;
+
+  }
+
+
 }
