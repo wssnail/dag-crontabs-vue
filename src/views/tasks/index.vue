@@ -81,8 +81,9 @@
     </el-dialog>
     <div calss="task-button">
       <el-button @click="addTask();dialogFormVisible = true;">新增Crontab任务</el-button>
-      <el-button @click="startTask()">启动任务</el-button>
-      <el-button @click="closeTask()">停止任务</el-button>
+      <el-button @click="addTask();dialogFormVisible = true;">修改Crontab任务</el-button>
+      <el-button @click="changeTaskEnabled(true)">启动任务</el-button>
+      <el-button @click="changeTaskEnabled(false)">停止任务</el-button>
       <el-button @click="dialogFormVisible = true;">关联任务流</el-button>
     </div>
     <template>
@@ -178,7 +179,20 @@
         </el-table-column>
 
       </el-table>
+
     </template>
+    <el-row type="flex" justify="center" style="padding-top: 10px">
+      <el-pagination
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        background
+        :current-page="currentPage"
+        :page-sizes="[10, 20, 30, 40, 50]"
+        :page-size="pageSize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total">
+      </el-pagination>
+    </el-row>
 
   </div>
 </template>
@@ -194,6 +208,9 @@
     data() {
       return {
         //start 新增任务的弹窗
+        total:0,
+        pageSize:10,
+        currentPage: 1,
         dialogFormVisible:false,
         colConfigs :[
           { prop: 'name', label: '任务名',width:150,fixed:true },
@@ -236,6 +253,31 @@
       }
     },
     methods:{
+
+      handleSizeChange(val) {
+        // console.log(`每页 ${val} 条`);
+        this.pageSize = val;
+        Tasks('get',{'pageSize':this.pageSize,'currentPage':this.currentPage}).then(response => {
+          var data = response.data;
+          var tasks = data.data;
+          var total = data.total;
+          this.tableData5 = tasks;
+          this.total = total;
+        });
+
+      },
+      handleCurrentChange(val) {
+        // console.log(`当前页: ${val}`);
+        this.currentPage = val;
+        Tasks('get',{'pageSize':this.pageSize,'currentPage':this.currentPage}).then(response => {
+          var data = response.data;
+          var tasks = data.data;
+          var total = data.total;
+          this.tableData5 = tasks;
+          this.total = total;
+        });
+      },
+      //表格多选
       toggleSelection(rows) {
         if (rows) {
           rows.forEach(row => {
@@ -245,87 +287,43 @@
           this.$refs.multipleTable.clearSelection();
         }
       },
+      //获取表格选中的内容
       handleSelectionChange(val) {
         this.multipleSelection = val;
       },
-      requestChange(){
-        this.startTask().then((res) => {
-          // Message({
-          //   // message: error.message,
-          //   dangerouslyUseHTMLString: true,
-          //   message: "启动成功：" + seccessStart + "<br/>启动失败：" + failStart + "<br/>无需重新启动：" + areadyStart,
-          //   type: 'success',
-          //   duration: 5 * 1000
-          // });
-          console.log(res)
-        },(error) =>{
-
+      //异步任务
+      createPromise(data) {
+          return Tasks("put",data);
+      },
+      //使用异步对任务的启动状态进行修改，单条到后台修改
+      changeTaskEnabled(enabled){
+        var promiseArray = [];
+        var idIndex = {};
+        for(let index in this.multipleSelection){
+          var task = this.multipleSelection[index];
+          if(task.enabled !== enabled){
+            idIndex[task.id] = index;
+            promiseArray.push(this.createPromise({'id':task.id,'enabled':enabled}));
+          }
+        }
+        Promise.all(promiseArray).then((response) => {
+          var taskName = [];
+          for(let index in response){
+            var taskId = response[index].data.id;
+            var task = this.multipleSelection[idIndex[taskId]];
+            task.enabled = enabled;
+            taskName.push(task.name)
+          }
+          Message({
+            // message: error.message,
+            dangerouslyUseHTMLString: true,
+            message: "操作成功：" + taskName,
+            type: 'success',
+            duration: 5 * 1000
+          });
         });
       },
-      startTask(){
-
-        var datas = [];
-        for(let index in this.multipleSelection){
-          var task = this.multipleSelection[index];
-          if(!task.enabled){
-            datas.push({'id':task.id,'enabled':true})
-          }
-        }
-        // task.name,task.id
-        Tasks("put",datas).then(
-          (res) => {
-            var id_updated = res.data.id_updated;
-            for(let index in this.multipleSelection){
-              var task = this.multipleSelection[index];
-              if(id_updated.indexOf(task.name) >= 0){
-                task.enabled = true;
-              }
-            }
-            Message({
-              // message: error.message,
-              dangerouslyUseHTMLString: true,
-              message: "启动成功：" + id_updated,
-              type: 'success',
-              duration: 5 * 1000
-            });
-            // console.log(res.data.id_updated);
-          },
-          (error) => {
-            // failStart.push(task.name)
-          }
-        );
-      },
-      closeTask(){
-        var datas = [];
-        for(let index in this.multipleSelection){
-          var task = this.multipleSelection[index];
-          if(task.enabled){
-            datas.push({'id':task.id,'enabled':false})
-          }
-        }
-        Tasks("put",datas).then(
-          (res) => {
-            var id_updated = res.data.id_updated;
-            for(let index in this.multipleSelection){
-              var task = this.multipleSelection[index];
-              if(id_updated.indexOf(task.name) >= 0){
-                task.enabled = false;
-              }
-            }
-            Message({
-              // message: error.message,
-              dangerouslyUseHTMLString: true,
-              message: "关闭成功：" + id_updated,
-              type: 'success',
-              duration: 5 * 1000
-            });
-            // console.log(res.data.id_updated);
-          },
-          (error) => {
-            // failStart.push(task.name)
-          }
-        );
-      },
+      //新增任务时，从数据库获取crontab shcema
       addTask(){
         //从数据库获取定时
         Crontabs('get',{'path':'index'}).then(response => {
@@ -353,6 +351,7 @@
           }
         });
       },
+      //任务提交
       submitRoom(val,type){
         var data = this.taskForm;
         Tasks('post',data).then(response => {
@@ -365,18 +364,13 @@
           });
           this.dialogFormVisible = false;
           var datas = response.data.task;
-          // this.tableData5 = datas;
-          // console.log(datas)
           this.tableData5.unshift(datas)
         }).catch(error => {
           console.log(error)
         });
-
-        // console.log(this.taskForm)
       },
+      //窗口关闭后重新设置表单
       resetForm(val) {
-
-        // console.log(this.oldForm);
         this.$refs[val].resetFields();
         this.taskForm = {
             id:'系统生成',
@@ -393,59 +387,19 @@
     },
     mounted() {
       //获取定时信息
-      Tasks('get').then(response => {
-        var datas = response.data;
-        this.tableData5 = datas;
-
-        // console.log(this.tableData5)
+      Tasks('get',{'pageSize':this.pageSize,'currentPage':this.currentPage}).then(response => {
+        var data = response.data;
+        var tasks = data.data;
+        var total = data.total;
+        this.tableData5 = tasks;
+        this.total = total;
       });
 
-
-
-      // this.$axios({
-      //   method: "get",
-      //   url:"crontabs/"
-      // }).then((response) => {
-      //   //把token存储到store
-      //   // console.log(response.data);
-      //   var responseData = response.data;
-      //   for(let index in responseData){
-      //     var currentData = responseData[index];
-      //     var crontabSelect = {'value':currentData.id,'label':currentData.crontab + "-" + currentData.username};
-      //     this.crontabs.push(crontabSelect);
-      //     // debugger;
-      //   }
-      //
-      // }).catch((error) => {
-      // });
-
-
-      // this.$axios({
-      //   method: "get",
-      //   url:"celeryworker/"
-      // }).then((response) => {
-      //   //把token存储到store
-      //   // console.log(response.data);
-      //
-      //   var responseData = response.data;
-      //   console.log(responseData);
-      //   var dict = {};
-      //   for(let keys in responseData){
-      //
-      //     dict[responseData[keys][0].name] = 0;
-      //   }
-      //   for(let key in dict){
-      //     var queueSelect = {'value': key,'label': key};
-      //     this.queues.push(queueSelect)
-      //   }
-      // }).catch((error) => {
-      // });
     }
   }
 </script>
 
 <style scoped>
-
 
   .demo-table-expand {
     font-size: 0;

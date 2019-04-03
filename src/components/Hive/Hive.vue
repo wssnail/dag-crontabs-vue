@@ -30,7 +30,7 @@
             rules: {
               name: [
                 {required: true,message: '必须填写', trigger: 'blur'},
-                {type:'email' , trigger: 'blur',validator:this.checkIdNames}
+                // {type:'email' , trigger: 'blur',validator:this.checkIdNames}
               ],
               master: [
                 {required: true,message: '必须填写', trigger: 'blur'}

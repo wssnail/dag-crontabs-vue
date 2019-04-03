@@ -29,13 +29,13 @@ Vue.component("v-hive",Hive);
  */
 import '../mock' // simulation data
 
-Vue.use(ElementUI, { locale })
+Vue.use(ElementUI, { locale });
 
-Vue.config.productionTip = false
+Vue.config.productionTip = false;
 
 new Vue({
   el: '#app',
   router,
   store,
   render: h => h(App)
-})
+});

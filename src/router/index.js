@@ -22,6 +22,7 @@ import Layout from '../views/layout/Layout'
     breadcrumb: false            if false, the item will hidden in breadcrumb(default is true)
   }
 **/
+// import HomePage from '@/views/DAGBoard/HomePage'
 export const constantRouterMap = [
   { path: '/login', component: () => import('@/views/login/index'), hidden: true },
   { path: '/404', component: () => import('@/views/404'), hidden: true },
@@ -48,6 +49,20 @@ export const constantRouterMap = [
         name: 'tasks',
         component: () => import('@/views/tasks/index'),
         meta: { title: '定时任务', icon: 'tasks' }
+      }
+    ]
+  },
+  {
+    path: '/DAGBoard',
+    component:Layout,
+    // component: () => import('@/views/DAGBoard/HomePage'),
+    // meta: { title: 'HomePage', icon: 'tasks' },
+    children: [
+      {
+        path: 'DAGBoard',
+        name: 'DAGBoard',
+        component: () => import('@/views/DAGBoard/HomePage'),
+        meta: { title: 'DAGBoard', icon: 'tasks' }
       }
     ]
   },
@@ -103,8 +118,18 @@ export const constantRouterMap = [
   { path: '*', redirect: '/404', hidden: true }
 ];
 
-export default new Router({
+const router = new Router({
   mode: 'history', //后端支持可开 避免#出现
   scrollBehavior: () => ({ y: 0 }),
   routes: constantRouterMap
+});
+
+router.beforeEach((to, from, next) => {//beforeEach是router的钩子函数，在进入路由前执行
+  if (to.meta.title) {//判断是否有标题
+    document.title = "分布式定时调度系统 - " + to.meta.title
+  }
+  next()//执行进入路由，如果不写就不会进入目标页
 })
+
+
+export default router
